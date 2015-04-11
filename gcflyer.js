@@ -5,6 +5,18 @@ var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var cv = require('opencv');
 
+<<<<<<< HEAD
+=======
+var twitter = require('twitter');
+var twitterClient = new twitter({
+	consumer_key: 'SweQ8xRKo5d2DPcMoQ9Dwve3Q',
+	consumer_secret: 'OqOJLro04uAfB39xWStjbwX5E2a6AFPEZFKnBZyZQUNHxADrdD',
+	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
+	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
+});
+
+var twitterParams = {screen_name: 'bitdrone'};
+>>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
 
 var in_air = false;
 var emergency = false;
@@ -13,6 +25,9 @@ var speed_yaw = 0;
 var speed_pitch = 0;
 var speed_roll = 0;
 var speed_vert = 0;
+
+var tweetDelta = 0; // Keep track of when our last post was.
+var minTweetDelta = 60000; // Only one post per minute
 
 //head camera
 //client.config('video:video_channel', 0);
@@ -67,8 +82,7 @@ function attachCamera(){
 					for (var i=0;i<faces.length; i++){
 						var x = faces[i]
 						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-					}
-					var imagename = './img/'+Date.now()+'.png';
+					}	var imagename = './img/'+Date.now()+'.png';
 					im.save(imagename);
 					console.log('Saved face image ' + imagename);
 				}
@@ -86,8 +100,24 @@ function detatchCamera(){
 	}
 }
 
+function tweet(content) {
+	if( typeof content == String ) {
+		if(content.length <= 140 && tweetDelta >= minTweetDelta) {
+			twitter.post('statuses/update', { status: content }, function(error, tweet, response) { 
+				if(error) throw error;
+				consle.log(tweet);
+				console.log(response);
+			});
+
+			tweetDelta = 0;
+		}
+	}
+}
+
 gc(function(controller){
 	controller.on('buttonChange', function(data){
+
+		tweetDelta++;
 
 		if(data.button == 'a' && data.value == 1){
 
@@ -154,10 +184,12 @@ gc(function(controller){
 			if(data.button == 'l' && data.value == 1){
 				client.animate('flipLeft', 1000);
 				console.log('Flipping left!');
+				tweet('Doing a barrel roll!');
 			}
 			if(data.button == 'r' && data.value == 1){
 				client.animate('flipRight', 1000);
 				console.log('Flipping right!');
+				tweet('Doing a barrel roll!');
 			}
 			if(data.button == 'z' && data.value == 1 && !in_air){
 				client  = arDrone.createClient();
@@ -166,3 +198,36 @@ gc(function(controller){
 		}
 	});
 });
+<<<<<<< HEAD
+=======
+
+
+console.log('Connecting png stream ...');
+var pngStream = arDrone.createClient().getPngStream();
+var lastPng;
+//save img streams from camera
+pngStream
+.on('error', console.log)
+.on('data', function(pngBuffer) {
+  //lastPng = pngBuffer;
+
+  //Instead of fs.write, cv.readImage TODO
+  //fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+    //if (err) throw err;
+    //console.log('It\'s saved!');
+  //});
+
+  cv.readImage("./pngBuffer", function(err, im){
+		im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+			for (var i=0;i<faces.length; i++){
+				var x = faces[i]
+				//im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+				im.crop(x.x , x.x + x.width, x.y , x.y +x.height);
+			}
+			var imagename = './img/out'+Date.now()+'.png';
+			im.save(imagename);
+			console.log('Saved ' + imagename)
+		});
+  })
+});
+>>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
