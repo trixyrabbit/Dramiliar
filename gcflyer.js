@@ -195,11 +195,12 @@ gc(function(controller){
 				client  = arDrone.createClient();
 				console.log('Reconnecting to drone...');
 			}
+			if(data.button == 'b' && data.value == 1 && !in_air){
+				tweet('test tweet!');
+			}
 		}
 	});
 });
-<<<<<<< HEAD
-=======
 
 
 console.log('Connecting png stream ...');
@@ -230,4 +231,3 @@ pngStream
 		});
   })
 });
->>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
