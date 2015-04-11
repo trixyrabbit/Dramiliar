@@ -15,7 +15,7 @@ var twitterClient = new twitter({
 
 var twitterParams = {screen_name: 'bitdrone'};
 
-var in_air = false;
+var in_air = false;	
 var emergency = false;
 var camera_attached = false;
 var speed_yaw = 0;
@@ -23,29 +23,13 @@ var speed_pitch = 0;
 var speed_roll = 0;
 var speed_vert = 0;
 
-var tweetDelta = 0; // Keep track of when our last post was.
-var minTweetDelta = 60000; // Only one post per minute
 
 //head camera
 //client.config('video:video_channel', 0);
 
-setTimeout(attachCamera, 100);
+setTimeout(attachCamera, 2000);
 
-console.log('Connecting png stream ...');
-var lastPng;
-var pngStream = client.getPngStream();
-//save img streams from camera
-pngStream
-.on('error', console.log)
-.on('data', function(pngBuffer) {
-  //lastPng = pngBuffer;
 
-  //Instead of fs.write, cv.readImage TODO
-  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-    if (err) throw err;
-    console.log('It\'s saved!');
-  });
-});
 function getStickSpeed(value){
 	var speed = 0;
 	if(value < 100)
@@ -65,64 +49,44 @@ function stopMovement(){
 function attachCamera(){
 	if(camera_attached)return;
 	camera_attached = true;
-	var output = fs.createWriteStream('./vid.h264');
-	console.log('Connecting video stream ...');
-	video = client.getVideoStream();
-	var parser = new PaVEParser();
-	parser
-  		.on('data', function(data) {
-    	output.write(data.payload);
-  	})
-  		.on('end', function() {
-    	output.end();
-  	});
-
-	video.pipe(parser);
-	/*video.on('error', console.log)
-	.on('data', function(pngBuffer) {
-		console.log('Got image!');
-		  //Just save file to 
-		  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-		  		if (err) throw err;
-		    	console.log('It\'s saved!');
-		  });
-	*/
-		/*
-		cv.readImage(pngBuffer, function(err, im){
-			im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-				if(faces && faces.length > 0){
-					for (var i=0;i<faces.length; i++){
-						var x = faces[i]
-						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-					}	var imagename = './img/'+Date.now()+'.png';
-					im.save(imagename);
-					console.log('Saved face image ' + imagename);
-				}
-				console.log('No faces!');
+			var s = new cv.ImageStream()
+		 
+			s.on('data', function(matrix){
+			cv.readImage(pngBuffer, function(err, im){
+				im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+					if(faces && faces.length > 0){
+						for (var i=0;i<faces.length; i++){
+							var x = faces[i]
+								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+							}	var imagename = './img/face'+Date.now()+'.png';
+							im.save(imagename);
+							console.log('Saved face image ' + imagename);
+						}
+					console.log('No faces!');
+					});
+				});
 			});
-		})
-		*/
-	//});
-}
+			 
+			cliet.createPngStream().pipe(s);
+		
 
+
+}
 function detatchCamera(){
 	if(video && video.close){
 		video.close();
 		camera_attached = false;
 	}
 }
-
 function tweet(content) {
-	if( typeof content == String ) {
-		if(content.length <= 140) {
+			console.log('trying to tweet');
 			twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
-				//if(error) throw error;
+				if(error) throw error;
 				console.log(tweet);
 				console.log(response);
 			});
-		}
-	}
 }
+
 
 gc(function(controller){
 	controller.on('buttonChange', function(data){
@@ -145,7 +109,7 @@ gc(function(controller){
 					client.takeoff();
 					console.log('Taking off!');
 					in_air = true;
-					//setTimeout(attachCamera, 100);
+					//setTimeout(attachCamera, 2000);
 				}
 			}
 
@@ -204,10 +168,40 @@ gc(function(controller){
 				console.log('Reconnecting to drone...');
 			}
 			if(data.button == 'b' && data.value == 1){
-				console.log('sending a tweet!');
-				tweet('test tweet!');
+				console.log(' tweet tweet x ' + Date.now() + '!' );
+				tweet(' tweet tweet x ' + Date.now() + '!');
 			}
 		}
 	});
 });
 
+/*
+	var output = fs.createWriteStream('./vid.h264');
+	console.log('Connecting video stream ...');
+	video = client.getVideoStream();
+	var parser = new PaVEParser();
+	parser 
+  		.on('data', function(data) {
+    	output.write(data.payload);
+  	})
+  		.on('end', function() {
+    	output.end();
+  	});
+
+	video.pipe(parser); */ /*
+	//save pngs and detect faces...
+	console.log('Connecting png stream ...');
+	var lastPng;
+	var pngStream = client.getPngStream();
+	//save img streams from camera
+	pngStream
+	.on('error', console.log)
+	.on('data', function(pngBuffer) {
+	  lastPng = pngBuffer;
+*/
+	  /*Instead of fs.write, cv.readImage TODO
+	  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+	    if (err) throw err;
+	    console.log('It\'s saved!');
+	  }); */
+	//see check the image for faces, save it
