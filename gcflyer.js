@@ -2,8 +2,11 @@ var gc = require('./gamecube_device.js');
 var arDrone = require('ar-drone');
 var client  = arDrone.createClient();
 var fs = require('fs');
+var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var cv = require('opencv');
 
+<<<<<<< HEAD
+=======
 var twitter = require('twitter');
 var twitterClient = new twitter({
 	consumer_key: 'SweQ8xRKo5d2DPcMoQ9Dwve3Q',
@@ -13,6 +16,7 @@ var twitterClient = new twitter({
 });
 
 var twitterParams = {screen_name: 'bitdrone'};
+>>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
 
 var in_air = false;
 var emergency = false;
@@ -28,7 +32,7 @@ var minTweetDelta = 60000; // Only one post per minute
 //head camera
 //client.config('video:video_channel', 0);
 
-var pngStream;
+setTimeout(attachCamera, 100);
 
 function getStickSpeed(value){
 	var speed = 0;
@@ -49,15 +53,29 @@ function stopMovement(){
 function attachCamera(){
 	if(camera_attached)return;
 	camera_attached = true;
+	var output = fs.createWriteStream('./vid.h264');
+	console.log('Connecting video stream ...');
+	video = client.getVideoStream();
+	var parser = new PaVEParser();
+	parser
+  		.on('data', function(data) {
+    	output.write(data.payload);
+  	})
+  		.on('end', function() {
+    	output.end();
+  	});
 
-	console.log('Connecting png stream ...');
-	pngStream = client.getPngStream();
-	var lastPng;
-	//save img streams from camera
-	pngStream.on('error', console.log)
+	video.pipe(parser);
+	/*video.on('error', console.log)
 	.on('data', function(pngBuffer) {
 		console.log('Got image!');
-
+		  //Just save file to 
+		  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+		  		if (err) throw err;
+		    	console.log('It\'s saved!');
+		  });
+	*/
+		/*
 		cv.readImage(pngBuffer, function(err, im){
 			im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
 				if(faces && faces.length > 0){
@@ -71,12 +89,13 @@ function attachCamera(){
 				console.log('No faces!');
 			});
 		})
-	});
+		*/
+	//});
 }
 
 function detatchCamera(){
-	if(pngStream && pngStream.close){
-		pngStream.close();
+	if(video && video.close){
+		video.close();
 		camera_attached = false;
 	}
 }
@@ -118,7 +137,7 @@ gc(function(controller){
 					client.takeoff();
 					console.log('Taking off!');
 					in_air = true;
-					setTimeout(attachCamera, 5000);
+					//setTimeout(attachCamera, 100);
 				}
 			}
 
@@ -179,6 +198,8 @@ gc(function(controller){
 		}
 	});
 });
+<<<<<<< HEAD
+=======
 
 
 console.log('Connecting png stream ...');
@@ -209,3 +230,4 @@ pngStream
 		});
   })
 });
+>>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
