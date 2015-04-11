@@ -31,6 +31,21 @@ var minTweetDelta = 60000; // Only one post per minute
 
 setTimeout(attachCamera, 100);
 
+console.log('Connecting png stream ...');
+var lastPng;
+var pngStream = client.getPngStream();
+//save img streams from camera
+pngStream
+.on('error', console.log)
+.on('data', function(pngBuffer) {
+  //lastPng = pngBuffer;
+
+  //Instead of fs.write, cv.readImage TODO
+  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+    if (err) throw err;
+    console.log('It\'s saved!');
+  });
+});
 function getStickSpeed(value){
 	var speed = 0;
 	if(value < 100)
@@ -99,22 +114,18 @@ function detatchCamera(){
 
 function tweet(content) {
 	if( typeof content == String ) {
-		if(content.length <= 140 && tweetDelta >= minTweetDelta) {
-			twitterClient.post('statuses/update', { status: conten }, function(error, tweet, response) {
-				if(error) throw error;
-				consle.log(tweet);
+		if(content.length <= 140) {
+			twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
+				//if(error) throw error;
+				console.log(tweet);
 				console.log(response);
 			});
-
-			tweetDelta = 0;
 		}
 	}
 }
 
 gc(function(controller){
 	controller.on('buttonChange', function(data){
-
-		tweetDelta++;
 
 		if(data.button == 'a' && data.value == 1){
 
@@ -192,26 +203,11 @@ gc(function(controller){
 				client  = arDrone.createClient();
 				console.log('Reconnecting to drone...');
 			}
-			if(data.button == 'b' && data.value == 1 && !in_air){
+			if(data.button == 'b' && data.value == 1){
+				console.log('sending a tweet!');
 				tweet('test tweet!');
 			}
 		}
 	});
 });
 
-
-console.log('Connecting png stream ...');
-var pngStream = client.getPngStream();
-var lastPng;
-//save img streams from camera
-pngStream
-.on('error', console.log)
-.on('data', function(pngBuffer) {
-  //lastPng = pngBuffer;
-
-  //Instead of fs.write, cv.readImage TODO
-  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-    if (err) throw err;
-    console.log('It\'s saved!');
-  });
-});
