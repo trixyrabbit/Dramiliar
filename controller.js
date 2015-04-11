@@ -3,6 +3,7 @@ var arDrone = require('ar-drone');
 var fs = require('fs');
 console.log('Connecting png stream ...');
 var pngStream = arDrone.createClient().getPngStream();
+var cv = require('opencv');
 var lastPng;
 //save img streams from camera
 pngStream
@@ -10,7 +11,7 @@ pngStream
 .on('data', function(pngBuffer) {
   //lastPng = pngBuffer;
 
-  //Instead of fs.write, cv.readImage TODO
+  //Instead of fs.write, cv.readImage 
   //fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
     //if (err) throw err;
     //console.log('It\'s saved!');
