@@ -84,7 +84,7 @@ function detatchCamera(){
 function tweet(content) {
 	if( typeof content == String ) {
 		if(content.length <= 140 && tweetDelta >= minTweetDelta) {
-			twitter.post('statuses/update', { status: content }, function(error, tweet, response) { 
+			twitterClient.post('statuses/update', { status: conten }, function(error, tweet, response) {
 				if(error) throw error;
 				consle.log(tweet);
 				console.log(response);
