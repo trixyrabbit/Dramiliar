@@ -5,8 +5,6 @@ var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var cv = require('opencv');
 
-<<<<<<< HEAD
-=======
 var twitter = require('twitter');
 var twitterClient = new twitter({
 	consumer_key: 'SweQ8xRKo5d2DPcMoQ9Dwve3Q',
@@ -16,7 +14,6 @@ var twitterClient = new twitter({
 });
 
 var twitterParams = {screen_name: 'bitdrone'};
->>>>>>> 1a3f7eabacdb115061e06a30928e572b9f38aed7
 
 var in_air = false;
 var emergency = false;
