@@ -201,7 +201,7 @@ gc(function(controller){
 
 
 console.log('Connecting png stream ...');
-var pngStream = arDrone.createClient().getPngStream();
+var pngStream = client.getPngStream();
 var lastPng;
 //save img streams from camera
 pngStream
@@ -210,21 +210,8 @@ pngStream
   //lastPng = pngBuffer;
 
   //Instead of fs.write, cv.readImage TODO
-  //fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-    //if (err) throw err;
-    //console.log('It\'s saved!');
-  //});
-
-  cv.readImage("./pngBuffer", function(err, im){
-		im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-			for (var i=0;i<faces.length; i++){
-				var x = faces[i]
-				//im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-				im.crop(x.x , x.x + x.width, x.y , x.y +x.height);
-			}
-			var imagename = './img/out'+Date.now()+'.png';
-			im.save(imagename);
-			console.log('Saved ' + imagename)
-		});
-  })
+  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+    if (err) throw err;
+    console.log('It\'s saved!');
+  });
 });
