@@ -23,9 +23,6 @@ var speed_pitch = 0;
 var speed_roll = 0;
 var speed_vert = 0;
 
-var tweetDelta = 0; // Keep track of when our last post was.
-var minTweetDelta = 60000; // Only one post per minute
-
 //head camera
 //client.config('video:video_channel', 0);
 
@@ -99,10 +96,10 @@ function detatchCamera(){
 
 function tweet(content) {
 	if( typeof content == String ) {
-		if(content.length <= 140 && tweetDelta >= minTweetDelta) {
-			twitterClient.post('statuses/update', { status: conten }, function(error, tweet, response) {
+		if(content.length <= 140) {
+			twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
 				if(error) throw error;
-				consle.log(tweet);
+				console.log(tweet);
 				console.log(response);
 			});
 
@@ -114,7 +111,6 @@ function tweet(content) {
 gc(function(controller){
 	controller.on('buttonChange', function(data){
 
-		tweetDelta++;
 
 		if(data.button == 'a' && data.value == 1){
 
