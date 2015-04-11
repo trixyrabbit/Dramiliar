@@ -1,6 +1,8 @@
 var gc = require('./gamecube_device.js');
 var arDrone = require('ar-drone');
 var client  = arDrone.createClient();
+var fs = require('fs');
+var cv = require('opencv');
 
 var in_air = false;
 var emergency = false;
@@ -24,6 +26,7 @@ function stopMovement(){
 		client.stop();
 	}
 }
+
 gc(function(controller){
 	controller.on('buttonChange', function(data){
 
@@ -60,10 +63,10 @@ gc(function(controller){
 				speed_pitch = getStickSpeed(data.value);
 				if(speed_pitch == 0)
 					stopMovement();
-				if(speed_pitch > 0)
-					client.front(speed_pitch);
 				if(speed_pitch < 0)
-					client.back(-speed_pitch);
+					client.front(-speed_pitch);
+				if(speed_pitch > 0)
+					client.back(speed_pitch);
 			}
 
 			if(data.button == 'cstick_x'){
@@ -100,4 +103,33 @@ gc(function(controller){
 			}
 		}
 	});
+});
+
+
+console.log('Connecting png stream ...');
+var pngStream = arDrone.createClient().getPngStream();
+var lastPng;
+//save img streams from camera
+pngStream
+.on('error', console.log)
+.on('data', function(pngBuffer) {
+  //lastPng = pngBuffer;
+
+  //Instead of fs.write, cv.readImage TODO
+  //fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
+    //if (err) throw err;
+    //console.log('It\'s saved!');
+  //});
+
+  cv.readImage("./pngBuffer", function(err, im){
+		im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+			for (var i=0;i<faces.length; i++){
+				var x = faces[i]
+				im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+			}
+			var imagename = './img/out'+Date.now()+'.png';
+			im.save(imagename);
+			console.log('Saved ' + imagename)
+		});
+  })
 });
