@@ -4,12 +4,31 @@ var client  = arDrone.createClient();
 var fs = require('fs');
 var cv = require('opencv');
 
+var twitter = require('twitter');
+var twitterClient = new twitter({
+	consumer_key: 'SweQ8xRKo5d2DPcMoQ9Dwve3Q',
+	consumer_secret: 'OqOJLro04uAfB39xWStjbwX5E2a6AFPEZFKnBZyZQUNHxADrdD',
+	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
+	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
+});
+
+var twitterParams = {screen_name: 'bitdrone'};
+
 var in_air = false;
 var emergency = false;
+var camera_attached = false;
 var speed_yaw = 0;
 var speed_pitch = 0;
-//var speed_roll = 0; //we never roll
+var speed_roll = 0;
 var speed_vert = 0;
+
+var tweetDelta = 0; // Keep track of when our last post was.
+var minTweetDelta = 60000; // Only one post per minute
+
+//head camera
+//client.config('video:video_channel', 0);
+
+var pngStream;
 
 function getStickSpeed(value){
 	var speed = 0;
@@ -22,41 +41,95 @@ function getStickSpeed(value){
 }
 
 function stopMovement(){
-	if(speed_vert == 0 && speed_pitch == 0 && speed_yaw == 0){
+	if(speed_vert == 0 && speed_pitch == 0 && speed_yaw == 0 && speed_roll == 0){
 		client.stop();
+	}
+}
+
+function attachCamera(){
+	if(camera_attached)return;
+	camera_attached = true;
+
+	console.log('Connecting png stream ...');
+	pngStream = client.getPngStream();
+	var lastPng;
+	//save img streams from camera
+	pngStream.on('error', console.log)
+	.on('data', function(pngBuffer) {
+		console.log('Got image!');
+
+		cv.readImage(pngBuffer, function(err, im){
+			im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+				if(faces && faces.length > 0){
+					for (var i=0;i<faces.length; i++){
+						var x = faces[i]
+						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+					}	var imagename = './img/'+Date.now()+'.png';
+					im.save(imagename);
+					console.log('Saved face image ' + imagename);
+				}
+				console.log('No faces!');
+			});
+		})
+	});
+}
+
+function detatchCamera(){
+	if(pngStream && pngStream.close){
+		pngStream.close();
+		camera_attached = false;
+	}
+}
+
+function tweet(content) {
+	if( typeof content == String ) {
+		if(content.length <= 140 && tweetDelta >= minTweetDelta) {
+			twitter.post('statuses/update', { status: content }, function(error, tweet, response) { 
+				if(error) throw error;
+				consle.log(tweet);
+				console.log(response);
+			});
+
+			tweetDelta = 0;
+		}
 	}
 }
 
 gc(function(controller){
 	controller.on('buttonChange', function(data){
 
+		tweetDelta++;
+
 		if(data.button == 'a' && data.value == 1){
 
 			client.land();
 			emergency = true;
 			console.log('EMERGENCY LANDING');
+			detatchCamera();
 		}
 		if(!emergency){
 			if(data.button == 'start' && data.value == 1){
 				if(in_air){
 					client.land();
 					console.log('Landing');
+					detatchCamera();
 					in_air = false;
 				}else{
 					client.takeoff();
 					console.log('Taking off!');
 					in_air = true;
+					setTimeout(attachCamera, 5000);
 				}
 			}
 
 			if(data.button == 'stick_x'){
-				speed_yaw = getStickSpeed(data.value);
-				if(speed_yaw == 0)
+				speed_roll = getStickSpeed(data.value);
+				if(speed_roll == 0)
 					stopMovement();
-				if(speed_yaw > 0)
-					client.right(speed_yaw);
-				if(speed_yaw < 0)
-					client.left(-speed_yaw);
+				if(speed_roll > 0)
+					client.right(speed_roll);
+				if(speed_roll < 0)
+					client.left(-speed_roll);
 			}
 
 			if(data.button == 'stick_y'){
@@ -92,10 +165,12 @@ gc(function(controller){
 			if(data.button == 'l' && data.value == 1){
 				client.animate('flipLeft', 1000);
 				console.log('Flipping left!');
+				tweet('Doing a barrel roll!');
 			}
 			if(data.button == 'r' && data.value == 1){
 				client.animate('flipRight', 1000);
 				console.log('Flipping right!');
+				tweet('Doing a barrel roll!');
 			}
 			if(data.button == 'z' && data.value == 1 && !in_air){
 				client  = arDrone.createClient();
