@@ -15,9 +15,15 @@ var twitterClient = new twitter({
 	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
+
+//Connec to camera
 var lastPng;
 var pngStream = client.getPngStream();
 
+//head camera
+client.config('video:video_channel', 0);
+
+setTimeout(attachCamera, 2000);
 
 var tweetToggle = true;
 var in_air = false;	
@@ -30,10 +36,6 @@ var speed_vert = 0;
 
 var dance_i = 0;
 
-//head camera
-client.config('video:video_channel', 0);
-
-setTimeout(attachCamera, 5000);
 
 
 /* * * * * * * * * * * * * 
@@ -51,7 +53,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 			var tcom = tweetTokens[1].toLowerCase();
 			queeryMM(tweet.text, function(isHappy) {
 				if(tweetTokens[0] == '@bitdrone' && isHappy){
-					tweet('What a nice tweet from ' tweet.screen_name '!! Buzz. Buzz! I just want to...');
+					tweet('What a nice tweet from ' + tweet.screen_name + '!! Buzz. Buzz! I just want to...');
 					if(tcom == '#flipit'
 					|| tcom == '#flipit!'){
 						client.animate('flipRight',1000);
@@ -169,6 +171,7 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
+		.on('error', console.log)
 		.on('data', function(pngBuffer) {
 		lastPng = pngBuffer;
 		cv.readImage(pngBuffer, function(err, im){
@@ -176,14 +179,14 @@ function attachCamera(){
 				if(faces && faces.length > 0){
 					for (var i=0;i<faces.length; i++){
 						var x = faces[i]
-						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+						//im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
 						var imagename = './img/face'+Date.now()+'.png';
 						im.crop(x.x, x.y, x.width, x.height).save(imagename);
 					}
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
 				}else{
-					//console.log('No faces!');
+					console.log('No faces!');
 				}
 			});
 		});	
@@ -303,7 +306,7 @@ gc(function(controller){
 			}
 			if(data.button == 'x' && data.value == 1){
 				console.log(' tweeting a pic');
-				tweetPic(' tweet tweet here is a face! ' + Date.now() + '!', lastPng);
+				tweetPic('Buzz Buzz, here is a pic!!', lastPng);
 			}
 			if(data.button == 'y' && data.value == 1){
 				tweetToggle = !tweetToggle;
