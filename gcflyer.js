@@ -405,6 +405,7 @@ gc(function(controller){
  * * * * * * * * * * */
 
 function compareFaces( image2 ) {
+	/*
    	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
 		if(err instanceof Error)
 			throw err;
@@ -418,4 +419,5 @@ function compareFaces( image2 ) {
 			tweetPic( '@'+waldo + ", I found you!", data);
 		});
 	});
+	*/
 }
