@@ -20,6 +20,7 @@ var pngStream = client.getPngStream();
 
 var waldo = '';
 var searching = false;
+var referencePic;
 
 var tweetToggle = true;
 var in_air = false;	
@@ -63,6 +64,15 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					|| tcom == '#spinRight'){
 						client.clockwise(1);
 						console.log('Tweet: spinning right');
+					}
+					if(tcom == '#findme') {
+						if(searching) {
+							tweet( tweet.user.name + ", sorry, I'm already looking for someone!");
+						} else {
+							waldo = tweet.user.name;
+							searching = true;
+						// referencePic = tweet.?; TODO : grab the photo from the post, 
+						}
 					}
 					if(tcom == '#spinLeft'){
 						client.counterClockwise(1);
