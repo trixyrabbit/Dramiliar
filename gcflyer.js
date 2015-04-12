@@ -13,7 +13,24 @@ var twitterClient = new twitter({
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
 
-var twitterParams = {screen_name: 'bitdrone'};
+var tweetToggle = false;
+
+// This allows us to track mentions of bitdrone.  This grabs everything, not just
+// @bitdrone.  TODO: only grab direct mentions
+// TODO: Parse for commands
+// TODO: Have a button activate/deactivate this functionality
+twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
+	stream.on('data', function(tweet) {
+		console.log(tweet.text);
+		if(tweetToggle) {
+			// Do things
+		}
+	});
+
+	stream.on('error', function(error) {
+		console.log(error);
+	});
+});
 
 var in_air = false;
 var emergency = false;
