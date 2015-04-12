@@ -16,6 +16,7 @@ var twitterClient = new twitter({
 	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
+
 var lastPng;
 var pngStream = client.getPngStream();
 
@@ -58,7 +59,9 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 		console.log(url);
 		if(url){
 			request.get({url: url, encoding: 'binary'}, function (err, response, body) {
-				fs.writeFile("./img/"+Date.now()+".png", body, 'binary', function(err) {
+				waldo = tweet.user.name;
+				referencePic = "./img/" + waldo + ".png";
+				fs.writeFile(referencePic, body, 'binary', function(err) {
 					if(err)
 						console.log(err);
 					else
@@ -211,9 +214,12 @@ function attachCamera(){
 				if(faces && faces.length > 0){
 					for (var i=0;i<faces.length; i++){
 						var x = faces[i]
-						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
 						var imagename = './img/face'+Date.now()+'.png';
 						im.crop(x.x, x.y, x.width, x.height).save(imagename);
+
+						if(searching){
+							compareFaces(imagename);
+						}
 					}
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
@@ -370,27 +376,16 @@ gc(function(controller){
  * BEGIN OPENBR STUFFS
  * * * * * * * * * * */
 
-function compareFaces( faceImage1, faceImage2 ) {
-	fs.writeFile("./test1", faceImage1, function(err) {
-		if(err) {
-			return console.log(err);
-		}
-
-		console.log("First face saved");
-	});
-	
-	fs.writeFile("./test2", faceImage2, function(err) {
-		if(err) {
-			return console.log(err);
-		}
-
-		console.log("First face saved");
-
-	   exec('br -algorithm FaceRecognition -compare ./test1.jpg ./test2.jpg', function(err,out,code) {
+function compareFaces( image2 ) {
+	   	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
 			if(err instanceof Error)
 				throw err;
 			if( parseFloat(out) >= .25 ) {
-				tweetPic( waldo + ", I found you!", faceImage2); 
+				fs.readFile(image2, function(err, data){
+					if(err) throw err;
+
+					tweetPic( waldo + ", I found you!", data);
+				});
 			}
 		});
 	});
