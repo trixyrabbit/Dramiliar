@@ -139,10 +139,19 @@ gc(function(controller){
 	controller.on('buttonChange', function(data){
 
 		if(data.button == 'a' && data.value == 1){
-
+			client.stop();
 			client.land();
 			emergency = true;
 			console.log('EMERGENCY LANDING');
+			setTimeout(function(){
+				client.stop();
+				client.land();
+				setTimeout(function(){
+					client = arDrone.createClient();
+					client.stop();
+					client.land();
+				},1000)
+			},1000);
 			//detatchCamera();
 		}
 		if(!emergency){
