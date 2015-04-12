@@ -16,6 +16,8 @@ var twitterClient = new twitter({
 var lastPng;
 var pngStream = client.getPngStream();
 
+var waldo = '';
+var searching = false;
 
 var tweetToggle = false;
 var in_air = false;	
@@ -86,6 +88,7 @@ function tweet(content) {
 			console.log(response);
 		});
 }
+
 //TODO catch no internet connection errr so we dont drop connection
 // Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
 function tweetPic(content, data) {
@@ -308,55 +311,36 @@ gc(function(controller){
 	});
 });
 
-/*
-	var output = fs.createWriteStream('./vid.h264');
-	console.log('Connecting video stream ...');
-	video = client.getVideoStream();
-	var parser = new PaVEParser();
-	parser 
-  		.on('data', function(data) {
-    	output.write(data.payload);
-  	})
-  		.on('end', function() {
-    	output.end();
-  	});
 
-	video.pipe(parser); */ /*
-	//save pngs and detect faces...
-	console.log('Connecting png stream ...');
-	var lastPng;
-	var pngStream = client.getPngStream();
-	//save img streams from camera
-	pngStream
-	.on('error', console.log)
-	.on('data', function(pngBuffer) {
-	  lastPng = pngBuffer;
-*/
-	  /*Instead of fs.write, cv.readImage TODO
-	  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-	    if (err) throw err;
-	    console.log('It\'s saved!');
-	  }); */
-	//see check the image for faces, save it
+/* * * * * * * * * * *
+ * BEGIN OPENBR STUFFS
+ * * * * * * * * * * */
 
-/*
-			var s = new cv.ImageStream()
-		 
-			s.on('data', function(matrix){
-			cv.readImage(pngBuffer, function(err, im){
-				im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-					if(faces && faces.length > 0){
-						for (var i=0;i<faces.length; i++){
-							var x = faces[i]
-								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-							}	var imagename = './img/face'+Date.now()+'.png';
-							im.save(imagename);
-							console.log('Saved face image ' + imagename);
-						}
-					console.log('No faces!');
-					});
-				});
-			});
-			 
-			client.getPngStream().pipe(s);
-*/
+var exec = require('child_process').exec;
+
+function compareFaces( faceImage1, faceImage2 ) {
+	fs.writeFile("./test1", faceImage1, function(err) {
+		if(err) {
+			reutrn console.log(err);
+		}
+
+		console.log("First face saved");
+	});
+	
+	fs.writeFile("./test2", faceImage2, function(err) {
+		if(err) {
+			reutrn console.log(err);
+		}
+
+		console.log("First face saved");
+
+	   exec('br -algorithm FaceRecognition -compare ./test1.jpg ./test2.jpg', function(err,out,code) {
+			if(err instanceof Error)
+				throw err;
+			if( parseFloat(out) >= .25 ) {
+				tweetPic( waldo + ", I found you!", faceImage2); 
+			}
+		});
+	});
+}
+
