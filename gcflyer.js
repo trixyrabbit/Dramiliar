@@ -1,9 +1,10 @@
 var gc = require('./gamecube_device.js');
 var arDrone = require('ar-drone');
-var client  = arDrone.createClient();
 var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var cv = require('opencv');
+
+var client  = arDrone.createClient();
 
 var twitter = require('twitter');
 var twitterClient = new twitter({
@@ -45,7 +46,12 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	stream.on('data', function(tweet) {
 		console.log(tweet.text);
 		if(tweetToggle) {
-			// Do things
+			tweetTokens = tweet.split(" ");
+			if(tweetTokens[0] == '@bitdrone'){
+				if(tweetTokens[1] == '#flipit!'){
+					client.animate('flipRight',1000);
+				}
+			}
 		}
 	});
 
