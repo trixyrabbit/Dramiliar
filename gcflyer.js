@@ -3,7 +3,8 @@ var arDrone = require('ar-drone');
 var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var sys = require('sys');
-var exec = require('child_process');
+var exec = require('child_process').exec;
+var request = require('request');
 var cv = require('opencv');
 
 var client  = arDrone.createClient({timeout : 60000});
@@ -16,6 +17,7 @@ var twitterClient = new twitter({
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
 
+<<<<<<< HEAD
 //Connec to camera
 var lastPng;
 var pngStream = client.getPngStream();
@@ -24,6 +26,14 @@ var pngStream = client.getPngStream();
 client.config('video:video_channel', 0);
 
 setTimeout(attachCamera, 2000);
+=======
+var lastPng;
+var pngStream = client.getPngStream();
+
+var waldo = '';
+var searching = false;
+var referencePic;
+>>>>>>> aa19ca5fe750b0b11df6cba6da2341d8e044c976
 
 var tweetToggle = true;
 var in_air = false;	
@@ -47,13 +57,19 @@ var dance_i = 0;
 
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	stream.on('data', function(tweet) {
-		console.log(tweet.text);
+		//console.log(JSON.stringify(tweet));
+		var url_i = tweet.text.indexOf('http://t.co/');
+		var url = undefined;
 		if(tweetToggle) {
 			tweetTokens = tweet.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
 			queeryMM(tweet.text, function(isHappy) {
 				if(tweetTokens[0] == '@bitdrone' && isHappy){
+<<<<<<< HEAD
 					tweet('What a nice tweet from ' + tweet.screen_name + '!! Buzz. Buzz! I just want to...');
+=======
+					//tweet('What a nice tweet from ' + tweet.user.name + '!! Buzz. Buzz! I just want to...');
+>>>>>>> aa19ca5fe750b0b11df6cba6da2341d8e044c976
 					if(tcom == '#flipit'
 					|| tcom == '#flipit!'){
 						client.animate('flipRight',1000);
@@ -63,6 +79,30 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					|| tcom == '#spinRight'){
 						client.clockwise(1);
 						console.log('Tweet: spinning right');
+					}
+					if(tcom == '#findme') {
+						if(searching) {
+							tweet( tweet.user.name + ", sorry, I'm already looking for someone!");
+						} else {
+							if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
+								url = tweet.extended_entities.media[0].media_url;
+							}
+								
+							console.log(url);
+							if(url){
+								request.get({url: url, encoding: 'binary'}, function (err, response, body) {
+									waldo = tweet.user.name;
+									searching = true;
+									referencePic = "./img/" + waldo + ".png";
+									fs.writeFile(referencePic, body, 'binary', function(err) {
+										if(err)
+											console.log(err);
+										else
+											console.log("The file was saved!");
+									}); 
+								});
+							}
+						}
 					}
 					if(tcom == '#spinLeft'){
 						client.counterClockwise(1);
@@ -87,10 +127,14 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 						client.takeoff();
 						console.log('Tweet: taking off');
 					}
+					if(tcom == '#takeapicture'
+					|| tcom == '#picture'
+					|| tcom == '#selfie'){
+						console.log('Tweet: tweeting photo');
+						tweetPic('Here you go ' + tweet.user.name,lastPng)
+					}
 				}
 			});
-			
-
 		}
 	});
 
@@ -99,34 +143,36 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	});
 });
 
-
-function queeryMM(content, cb) {
-		var child = exec('curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":' + content + '}\' "https://www.metamind.io/language/classify" ', function (error, stdout, stderr) {
-			var classes = JSON.parse(stdout);
-			if (error !== null) {
-				//
-				console.log('exec error: ' + error);
-
-			}
-			if(classes.predictions[0].class_id == 2) {
-				client.stop();
-				console.log('seems you are a nice person');
-				tweet()
-				cb(true);
-			}
-			else cb(false)
-		});
-}
-
 function tweet(content) {
 	console.log('trying to tweet');
-		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
+		twitterClient.post('statuses/update', { status: content }, function(error, asd, response) {
 			if(error) return;
-			console.log(tweet);
+			console.log(asd);
 			//console.log(response);
 		});
 }
 
+function queeryMM(content, cb) {
+	var cmd = 'curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":\"' + content + '\"}\' "https://www.metamind.io/language/classify" ';
+	console.log(cmd);
+
+	var child = exec(cmd, function (error, stdout, stderr) {
+		var classes = JSON.parse(stdout);
+		if (error !== null) {
+			//
+			console.log('exec error: ' + error);
+
+		}
+		console.log(JSON.stringify(classes));
+		if(classes.predictions[0].class_id == 2) {
+			client.stop();
+			console.log('seems you are a nice person');
+			tweet()
+			cb(true);
+		}
+		else cb(false)
+	});
+}
 // Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
 function tweetPic(content, data) {
 	twitterClient.post('media/upload', { media: data }, function(error, media, response) {
@@ -179,9 +225,16 @@ function attachCamera(){
 				if(faces && faces.length > 0){
 					for (var i=0;i<faces.length; i++){
 						var x = faces[i]
+<<<<<<< HEAD
 						//im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+=======
+>>>>>>> aa19ca5fe750b0b11df6cba6da2341d8e044c976
 						var imagename = './img/face'+Date.now()+'.png';
 						im.crop(x.x, x.y, x.width, x.height).save(imagename);
+
+						if(searching){
+							compareFaces(imagename);
+						}
 					}
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
@@ -330,20 +383,25 @@ gc(function(controller){
 					}
 				},5000);
 			}
-			if(data.button == 'dpad_up' && data.value == 1){
-				var dances = ['phiM30Deg', 'phi30Deg', 'thetaM30Deg', 'theta30Deg', 'theta20degYaw200deg',
-'theta20degYawM200deg', 'turnaround', 'turnaroundGodown', 'yawShake',
-'yawDance', 'phiDance', 'thetaDance', 'vzDance', 'wave', 'phiThetaMixed',
-'doublePhiThetaMixed', 'flipAhead', 'flipBehind', 'flipLeft', 'flipRight'];
-
-				if(dance_i >= dances.length){
-					dance_i = 0;
-				}
-
-				console.log('Animation test: ' + dances[dance_i]);
-
-				client.animate(dances[dance_i++], 5000);
-			}
 		}
 	});
 });
+
+/* * * * * * * * * * *
+ * BEGIN OPENBR STUFFS
+ * * * * * * * * * * */
+
+function compareFaces( image2 ) {
+	   	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
+			if(err instanceof Error)
+				throw err;
+			if( parseFloat(out) >= .25 ) {
+				fs.readFile(image2, function(err, data){
+					if(err) throw err;
+					searching = false;
+					tweetPic( waldo + ", I found you!", data);
+				});
+			}
+		});
+	});
+}
