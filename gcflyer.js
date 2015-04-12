@@ -47,12 +47,12 @@ setTimeout(attachCamera, 5000);
 // TODO: Have a button activate/deactivate this functionality
 
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
-	stream.on('data', function(tweet) {
+	stream.on('data', function(tweetdat) {
 		//console.log(JSON.stringify(tweet));
-		var url_i = tweet.text.indexOf('http://t.co/');
+		//var url_i = tweetdat.text.indexOf('http://t.co/');
 		var url = undefined;
-		if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
-			url = tweet.extended_entities.media[0].media_url;
+		if(tweetdat.extended_entities && tweetdat.extended_entities.media && tweetdat.extended_entities.media.length >= 0){
+			url = tweetdat.extended_entities.media[0].media_url;
 		}
 		console.log(url);
 		if(url){
@@ -66,11 +66,11 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 			});
 		}
 		if(tweetToggle) {
-			tweetTokens = tweet.text.split(" ");
+			tweetTokens = tweetdat.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
-			queeryMM(tweet.text, function(isHappy) {
+			queeryMM(tweetdat.text, function(isHappy) {
 				if(tweetTokens[0] == '@bitdrone' && isHappy){
-					//tweet('What a nice tweet from ' + tweet.user.name + '!! Buzz. Buzz! I just want to...');
+					tweet('What a nice tweet from ' + tweetdat.user.name + '!! Buzz. Buzz! I just want to...');
 					if(tcom == '#flipit'
 					|| tcom == '#flipit!'){
 						client.animate('flipRight',1000);
@@ -108,7 +108,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					|| tcom == '#picture'
 					|| tcom == '#selfie'){
 						console.log('Tweet: tweeting photo');
-						tweetPic('Here you go ' + tweet.user.name,lastPng)
+						tweetPic('Here you go ' + tweetdat.user.name,lastPng)
 					}
 				}
 			});
@@ -129,8 +129,13 @@ function tweet(content) {
 		});
 }
 
+/* * * * * * * * * * * * * 
+ *   Begin Meta Mind Stuff
+ * * * * * * * * * * * * */
+
+
 function queeryMM(content, cb) {
-	var cmd = 'curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":\"' + content + '\"}\' "https://www.metamind.io/language/classify" ';
+	var cmd = 'curl -H "Autg7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":\"' + content + '\"}\' "https://www.metamind.io/language/classify" ';
 	console.log(cmd);
 
 	var child = exec(cmd, function (error, stdout, stderr) {
@@ -187,6 +192,12 @@ function stopMovement(){
 		client.stop();
 	}
 }
+
+
+/* * * * * * * * * * * * * 
+ *   BEGIN PNG Stream Stuff
+ * * * * * * * * * * * * */
+
 
 function attachCamera(){
 	if(camera_attached)return;
@@ -381,7 +392,7 @@ function compareFaces( faceImage1, faceImage2 ) {
 				throw err;
 			if( parseFloat(out) >= .25 ) {
 				tweetPic( waldo + ", I found you!", faceImage2); 
-			}
+			}x
 		});
 	});
 }
