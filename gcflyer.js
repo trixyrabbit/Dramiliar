@@ -4,7 +4,7 @@ var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
 var cv = require('opencv');
 
-var client  = arDrone.createClient({timeout : 6000});
+var client  = arDrone.createClient({timeout : 60000});
 
 var twitter = require('twitter');
 var twitterClient = new twitter({
@@ -66,6 +66,14 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 				|| tcom == '#go'){
 					client.front(1);
 					console.log('Tweet: going forward');
+				}
+				if(tcom == '#stop'){
+					client.stop();
+					console.log('Tweet: stopping');
+				}
+				if(tcom == '#land'){
+					client.land();
+					console.log('Tweet: landing');
 				}
 				if(tcom == '#start'
 				|| tcom == '#takeoff'
