@@ -6,7 +6,7 @@ var sys = require('sys');
 var exec = require('child_process');
 var cv = require('opencv');
 
-var client  = arDrone.createClient();
+var client  = arDrone.createClient({timeout : 6000});
 
 var twitter = require('twitter');
 var twitterClient = new twitter({
@@ -19,7 +19,7 @@ var lastPng;
 var pngStream = client.getPngStream();
 
 
-var tweetToggle = false;
+var tweetToggle = true;
 var in_air = false;	
 var emergency = false;
 var camera_attached = false;
@@ -46,29 +46,34 @@ setTimeout(attachCamera, 5000);
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	stream.on('data', function(tweet) {
 		console.log(tweet.text);
-		var tcom = tweetTokens[1].toLowerCase();
 		if(tweetToggle) {
 			tweetTokens = tweet.text.split(" ");
+			var tcom = tweetTokens[1].toLowerCase();
 			if(tweetTokens[0] == '@bitdrone'){
 				if(tcom == '#flipit'
 				|| tcom == '#flipit!'){
 					client.animate('flipRight',1000);
+					console.log('Tweet: Flipping right');
 				}
 				if(tcom == '#spin'
-				|| tcom == '#spinRight')
+				|| tcom == '#spinRight'){
 					client.clockwise(1);
+					console.log('Tweet: spinning right');
 				}
-				if(tcom == '#spinLeft')
+				if(tcom == '#spinLeft'){
 					client.counterClockwise(1);
+					console.log('Tweet: spinning left');
 				}
 				if(tcom == '#forward'
-				|| tcom == '#go')
+				|| tcom == '#go'){
 					client.front(1);
+					console.log('Tweet: going forward');
 				}
 				if(tcom == '#start'
 				|| tcom == '#takeoff'
-				|| tcom == '#liftoff')
+				|| tcom == '#liftoff'){
 					client.takeoff();
+					console.log('Tweet: taking off');
 				}
 			}
 
@@ -98,6 +103,7 @@ function queeryMM(content) {
 			}
 		});
 }
+
 function tweet(content) {
 	console.log('trying to tweet');
 		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
@@ -151,7 +157,6 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
-		//.on('error', console.log)
 		.on('data', function(pngBuffer) {
 		lastPng = pngBuffer;
 		cv.readImage(pngBuffer, function(err, im){
