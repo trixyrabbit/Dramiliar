@@ -2,6 +2,8 @@ var gc = require('./gamecube_device.js');
 var arDrone = require('ar-drone');
 var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
+var sys = require('sys');
+var exec = require('child_process');
 var cv = require('opencv');
 
 var client  = arDrone.createClient();
@@ -78,15 +80,33 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	});
 });
 
+
+function queeryMM(content) {
+		var child = exec('curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":' + content + '}\' "https://www.metamind.io/language/classify" ', function (error, stdout, stderr) {
+			var classes = JSON.parse(stdout);
+
+			if(classes.predictions[0].class_id == 2) {
+				client.stop();
+				console.log('seems you are a nice person');
+				return true;
+			}
+			else return false;
+			if (error !== null) {
+				//
+				console.log('exec error: ' + error);
+
+			}
+		});
+}
 function tweet(content) {
 	console.log('trying to tweet');
 		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
 			if(error) return;
 			console.log(tweet);
-			console.log(response);
+			//console.log(response);
 		});
 }
-//TODO catch no internet connection errr so we dont drop connection
+
 // Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
 function tweetPic(content, data) {
 	twitterClient.post('media/upload', { media: data }, function(error, media, response) {
@@ -131,7 +151,7 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
-		.on('error', console.log)
+		//.on('error', console.log)
 		.on('data', function(pngBuffer) {
 		lastPng = pngBuffer;
 		cv.readImage(pngBuffer, function(err, im){
@@ -146,7 +166,7 @@ function attachCamera(){
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
 				}else{
-					console.log('No faces!');
+					//console.log('No faces!');
 				}
 			});
 		});	
@@ -307,56 +327,3 @@ gc(function(controller){
 		}
 	});
 });
-
-/*
-	var output = fs.createWriteStream('./vid.h264');
-	console.log('Connecting video stream ...');
-	video = client.getVideoStream();
-	var parser = new PaVEParser();
-	parser 
-  		.on('data', function(data) {
-    	output.write(data.payload);
-  	})
-  		.on('end', function() {
-    	output.end();
-  	});
-
-	video.pipe(parser); */ /*
-	//save pngs and detect faces...
-	console.log('Connecting png stream ...');
-	var lastPng;
-	var pngStream = client.getPngStream();
-	//save img streams from camera
-	pngStream
-	.on('error', console.log)
-	.on('data', function(pngBuffer) {
-	  lastPng = pngBuffer;
-*/
-	  /*Instead of fs.write, cv.readImage TODO
-	  fs.writeFile('./img/' + Date.now() + '.png', pngBuffer, function (err) {
-	    if (err) throw err;
-	    console.log('It\'s saved!');
-	  }); */
-	//see check the image for faces, save it
-
-/*
-			var s = new cv.ImageStream()
-		 
-			s.on('data', function(matrix){
-			cv.readImage(pngBuffer, function(err, im){
-				im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-					if(faces && faces.length > 0){
-						for (var i=0;i<faces.length; i++){
-							var x = faces[i]
-								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-							}	var imagename = './img/face'+Date.now()+'.png';
-							im.save(imagename);
-							console.log('Saved face image ' + imagename);
-						}
-					console.log('No faces!');
-					});
-				});
-			});
-			 
-			client.getPngStream().pipe(s);
-*/
