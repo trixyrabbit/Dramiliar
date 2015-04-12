@@ -16,11 +16,24 @@ var twitterClient = new twitter({
 	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
+
+<<<<<<< HEAD
+//Connec to camera
+var lastPng;
+var pngStream = client.getPngStream();
+
+//head camera
+client.config('video:video_channel', 0);
+
+setTimeout(attachCamera, 2000);
+=======
 var lastPng;
 var pngStream = client.getPngStream();
 
 var waldo = '';
 var searching = false;
+var referencePic;
+>>>>>>> aa19ca5fe750b0b11df6cba6da2341d8e044c976
 
 var tweetToggle = true;
 var in_air = false;	
@@ -33,10 +46,6 @@ var speed_vert = 0;
 
 var dance_i = 0;
 
-//head camera
-client.config('video:video_channel', 0);
-
-setTimeout(attachCamera, 5000);
 
 
 /* * * * * * * * * * * * * 
@@ -65,12 +74,14 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 				}); 
 			});
 		}
+
 		if(tweetToggle) {
 			tweetTokens = tweetdat.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
 			queeryMM(tweetdat.text, function(isHappy) {
 				if(tweetTokens[0] == '@bitdrone' && isHappy){
 					tweet('What a nice tweet from ' + tweetdat.user.name + '!! Buzz. Buzz! I just want to...');
+
 					if(tcom == '#flipit'
 					|| tcom == '#flipit!'){
 						client.animate('flipRight',1000);
@@ -80,6 +91,30 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					|| tcom == '#spinRight'){
 						client.clockwise(1);
 						console.log('Tweet: spinning right');
+					}
+					if(tcom == '#findme') {
+						if(searching) {
+							tweet( tweet.user.name + ", sorry, I'm already looking for someone!");
+						} else {
+							if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
+								url = tweet.extended_entities.media[0].media_url;
+							}
+								
+							console.log(url);
+							if(url){
+								request.get({url: url, encoding: 'binary'}, function (err, response, body) {
+									waldo = tweet.user.name;
+									searching = true;
+									referencePic = "./img/" + waldo + ".png";
+									fs.writeFile(referencePic, body, 'binary', function(err) {
+										if(err)
+											console.log(err);
+										else
+											console.log("The file was saved!");
+									}); 
+								});
+							}
+						}
 					}
 					if(tcom == '#spinLeft'){
 						client.counterClockwise(1);
@@ -205,6 +240,7 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
+		.on('error', console.log)
 		.on('data', function(pngBuffer) {
 		lastPng = pngBuffer;
 		cv.readImage(pngBuffer, function(err, im){
@@ -212,14 +248,19 @@ function attachCamera(){
 				if(faces && faces.length > 0){
 					for (var i=0;i<faces.length; i++){
 						var x = faces[i]
-						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+
+
 						var imagename = './img/face'+Date.now()+'.png';
 						im.crop(x.x, x.y, x.width, x.height).save(imagename);
+
+						if(searching){
+							compareFaces(imagename);
+						}
 					}
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
 				}else{
-					//console.log('No faces!');
+					console.log('No faces!');
 				}
 			});
 		});	
@@ -339,7 +380,7 @@ gc(function(controller){
 			}
 			if(data.button == 'x' && data.value == 1){
 				console.log(' tweeting a pic');
-				tweetPic(' tweet tweet here is a face! ' + Date.now() + '!', lastPng);
+				tweetPic('Buzz Buzz, here is a pic!!', lastPng);
 			}
 			if(data.button == 'y' && data.value == 1){
 				tweetToggle = !tweetToggle;
@@ -371,28 +412,20 @@ gc(function(controller){
  * BEGIN OPENBR STUFFS
  * * * * * * * * * * */
 
-function compareFaces( faceImage1, faceImage2 ) {
-	fs.writeFile("./test1", faceImage1, function(err) {
-		if(err) {
-			return console.log(err);
-		}
-
-		console.log("First face saved");
-	});
-	
-	fs.writeFile("./test2", faceImage2, function(err) {
-		if(err) {
-			return console.log(err);
-		}
-
-		console.log("First face saved");
-
-	   exec('br -algorithm FaceRecognition -compare ./test1.jpg ./test2.jpg', function(err,out,code) {
+function compareFaces( image2 ) {
+	   	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
 			if(err instanceof Error)
 				throw err;
 			if( parseFloat(out) >= .25 ) {
 				tweetPic( waldo + ", I found you!", faceImage2); 
-			}x
+			}
+
+				fs.readFile(image2, function(err, data){
+					if(err) throw err;
+					searching = false;
+					tweetPic( waldo + ", I found you!", data);
+				});
+			}
 		});
 	});
 }
