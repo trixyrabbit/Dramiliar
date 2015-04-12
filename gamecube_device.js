@@ -19,6 +19,10 @@ var last_l = 0;
 var last_r = 0;
 var last_z = 0;
 var last_start = 0;
+var last_dpad_down = 0;
+var last_dpad_left = 0;
+var last_dpad_up = 0;
+var last_dpad_right = 0;
 
 function connectToFile(filename, callback){
 	console.log('GC: checking ' + filename);
@@ -71,7 +75,7 @@ function connectToFile(filename, callback){
 
 				for(var j = 0; j < 8; j++){
 					bits.push((chunk[i]&(1<<j))>>j);
-					if(i == 6)logstr += (chunk[i]&(1<<j))>>j;
+					if(i == 7)logstr += (chunk[i]&(1<<j))>>j;
 					//chunk[i]>>=1;
 				}
 			}
@@ -90,6 +94,20 @@ function connectToFile(filename, callback){
 			var r = bits[5];
 			var z = bits[7];
 			var start = bits[9];
+			var dpad_down = 0;
+			var dpad_left = 0;
+			var dpad_up = 0;
+			var dpad_right = 0;
+
+			var d = [(chunk[7]&(0x1<<4))>>4, (chunk[7]&(0x1<<5))>>5, (chunk[7]&(0x1<<6))>>6, (chunk[7]&(0x1<<7))>>7];
+			if(!d[0]&&!d[1]&& d[2]&&!d[3] || d[0]&&!d[1]&& d[2]&&!d[3] || d[0]&& d[1]&&!d[2]&&!d[3] )
+				dpad_down = 1;
+			if( d[0]&&!d[1]&& d[2]&&!d[3] ||!d[0]&& d[1]&& d[2]&&!d[3] || d[0]&& d[1]&& d[2]&&!d[3] )
+				dpad_left = 1;
+			if( d[0]&& d[1]&& d[2]&&!d[3] ||!d[0]&&!d[1]&&!d[2]&&!d[3] || d[0]&&!d[1]&&!d[2]&&!d[3] )
+				dpad_up = 1;
+			if( d[0]&&!d[1]&&!d[2]&&!d[3] ||!d[0]&& d[1]&&!d[2]&&!d[3] || d[0]&& d[1]&&!d[2]&&!d[3] )
+				dpad_right = 1;
 
 			if(stick_x != last_stick_x)emitter.emit('buttonChange', {button:'stick_x', value: stick_x});
 			if(stick_y != last_stick_y)emitter.emit('buttonChange', {button:'stick_y', value: stick_y});
@@ -105,6 +123,10 @@ function connectToFile(filename, callback){
 			if(r != last_r)emitter.emit('buttonChange', {button:'r', value: r});
 			if(z != last_z)emitter.emit('buttonChange', {button:'z', value: z});
 			if(start != last_start)emitter.emit('buttonChange', {button:'start', value: start});
+			if(dpad_down != last_dpad_down)emitter.emit('buttonChange', {button:'dpad_down', value: dpad_down});
+			if(dpad_left != last_dpad_left)emitter.emit('buttonChange', {button:'dpad_left', value: dpad_left});
+			if(dpad_up != last_dpad_up)emitter.emit('buttonChange', {button:'dpad_up', value: dpad_up});
+			if(dpad_right != last_dpad_right)emitter.emit('buttonChange', {button:'dpad_right', value: dpad_right});
 
 			last_stick_x = stick_x;
 			last_stick_y = stick_y;
@@ -120,6 +142,10 @@ function connectToFile(filename, callback){
 			last_r = r;
 			last_z = z;
 			last_start = start;
+			last_dpad_down = dpad_down;	
+			last_dpad_left = dpad_left;
+			last_dpad_up = dpad_up;
+			last_dpad_right = dpad_right;
 		}
 	});
 }
