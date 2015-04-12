@@ -49,41 +49,45 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 		if(tweetToggle) {
 			tweetTokens = tweet.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
-			if(tweetTokens[0] == '@bitdrone'){
-				if(tcom == '#flipit'
-				|| tcom == '#flipit!'){
-					client.animate('flipRight',1000);
-					console.log('Tweet: Flipping right');
+			queeryMM(tweet.text, function(isHappy) {
+				if(tweetTokens[0] == '@bitdrone' && isHappy){
+					tweet('What a nice tweet from ' tweet.screen_name '!! Buzz. Buzz! I just want to...');
+					if(tcom == '#flipit'
+					|| tcom == '#flipit!'){
+						client.animate('flipRight',1000);
+						console.log('Tweet: Flipping right');
+					}
+					if(tcom == '#spin'
+					|| tcom == '#spinRight'){
+						client.clockwise(1);
+						console.log('Tweet: spinning right');
+					}
+					if(tcom == '#spinLeft'){
+						client.counterClockwise(1);
+						console.log('Tweet: spinning left');
+					}
+					if(tcom == '#forward'
+					|| tcom == '#go'){
+						client.front(1);
+						console.log('Tweet: going forward');
+					}
+					if(tcom == '#stop'){
+						client.stop();
+						console.log('Tweet: stopping');
+					}
+					if(tcom == '#land'){
+						client.land();
+						console.log('Tweet: landing');
+					}
+					if(tcom == '#start'
+					|| tcom == '#takeoff'
+					|| tcom == '#liftoff'){
+						client.takeoff();
+						console.log('Tweet: taking off');
+					}
 				}
-				if(tcom == '#spin'
-				|| tcom == '#spinRight'){
-					client.clockwise(1);
-					console.log('Tweet: spinning right');
-				}
-				if(tcom == '#spinLeft'){
-					client.counterClockwise(1);
-					console.log('Tweet: spinning left');
-				}
-				if(tcom == '#forward'
-				|| tcom == '#go'){
-					client.front(1);
-					console.log('Tweet: going forward');
-				}
-				if(tcom == '#stop'){
-					client.stop();
-					console.log('Tweet: stopping');
-				}
-				if(tcom == '#land'){
-					client.land();
-					console.log('Tweet: landing');
-				}
-				if(tcom == '#start'
-				|| tcom == '#takeoff'
-				|| tcom == '#liftoff'){
-					client.takeoff();
-					console.log('Tweet: taking off');
-				}
-			}
+			});
+			
 
 		}
 	});
@@ -94,21 +98,21 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 });
 
 
-function queeryMM(content) {
+function queeryMM(content, cb) {
 		var child = exec('curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":' + content + '}\' "https://www.metamind.io/language/classify" ', function (error, stdout, stderr) {
 			var classes = JSON.parse(stdout);
-
-			if(classes.predictions[0].class_id == 2) {
-				client.stop();
-				console.log('seems you are a nice person');
-				return true;
-			}
-			else return false;
 			if (error !== null) {
 				//
 				console.log('exec error: ' + error);
 
 			}
+			if(classes.predictions[0].class_id == 2) {
+				client.stop();
+				console.log('seems you are a nice person');
+				tweet()
+				cb(true);
+			}
+			else cb(false)
 		});
 }
 
