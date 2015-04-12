@@ -51,16 +51,31 @@ var dance_i = 0;
 // TODO: Have a button activate/deactivate this functionality
 
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
-	stream.on('data', function(tweet) {
+	stream.on('data', function(tweetdat) {
 		//console.log(JSON.stringify(tweet));
-		var url_i = tweet.text.indexOf('http://t.co/');
+		//var url_i = tweetdat.text.indexOf('http://t.co/');
 		var url = undefined;
+		if(tweetdat.extended_entities && tweetdat.extended_entities.media && tweetdat.extended_entities.media.length >= 0){
+			url = tweetdat.extended_entities.media[0].media_url;
+		}
+		console.log(url);
+		if(url){
+			request.get({url: url, encoding: 'binary'}, function (err, response, body) {
+				fs.writeFile("./img/"+Date.now()+".png", body, 'binary', function(err) {
+					if(err)
+						console.log(err);
+					else
+						console.log("The file was saved!");
+				}); 
+			});
+		}
+
 		if(tweetToggle) {
-			tweetTokens = tweet.text.split(" ");
+			tweetTokens = tweetdat.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
-			queeryMM(tweet.text, function(isHappy) {
+			queeryMM(tweetdat.text, function(isHappy) {
 				if(tweetTokens[0] == '@bitdrone' && isHappy){
-					tweet('What a nice tweet from ' + tweet.screen_name + '!! Buzz. Buzz! I just want to...');
+					tweet('What a nice tweet from @' + tweetdat.user.screen_name + '!! Buzz. Buzz! I just want to...');
 					if(tcom == '#flipit'
 					|| tcom == '#flipit!'){
 						client.animate('flipRight',1000);
@@ -73,7 +88,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					}
 					if(tcom == '#findme') {
 						if(searching) {
-							tweet( tweet.user.name + ", sorry, I'm already looking for someone!");
+							tweet( '@' + tweetdat.user.screen_name + ", sorry, I'm already looking for someone!");
 						} else {
 							if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
 								url = tweet.extended_entities.media[0].media_url;
@@ -82,7 +97,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 							console.log(url);
 							if(url){
 								request.get({url: url, encoding: 'binary'}, function (err, response, body) {
-									waldo = tweet.user.name;
+									waldo = tweetdat.user.screen_name;
 									searching = true;
 									referencePic = "./img/" + waldo + ".png";
 									fs.writeFile(referencePic, body, 'binary', function(err) {
@@ -122,7 +137,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 					|| tcom == '#picture'
 					|| tcom == '#selfie'){
 						console.log('Tweet: tweeting photo');
-						tweetPic('Here you go ' + tweet.user.name,lastPng)
+						tweetPic('Here you go @' + tweetdat.user.screen_name,lastPng)
 					}
 				}
 			});
@@ -142,6 +157,11 @@ function tweet(content) {
 			//console.log(response);
 		});
 }
+
+/* * * * * * * * * * * * * 
+ *   Begin Meta Mind Stuff
+ * * * * * * * * * * * * */
+
 
 function queeryMM(content, cb) {
 	var cmd = 'curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":\"' + content + '\"}\' "https://www.metamind.io/language/classify" ';
@@ -201,6 +221,12 @@ function stopMovement(){
 		client.stop();
 	}
 }
+
+
+/* * * * * * * * * * * * * 
+ *   BEGIN PNG Stream Stuff
+ * * * * * * * * * * * * */
+
 
 function attachCamera(){
 	if(camera_attached)return;
@@ -379,16 +405,17 @@ gc(function(controller){
  * * * * * * * * * * */
 
 function compareFaces( image2 ) {
-	   	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
-			if(err instanceof Error)
-				throw err;
-			if( parseFloat(out) >= .25 ) {
-				fs.readFile(image2, function(err, data){
-					if(err) throw err;
-					searching = false;
-					tweetPic( waldo + ", I found you!", data);
-				});
-			}
+   	exec('br -algorithm FaceRecognition -compare '+ referencePic + ' ' + image2, function(err,out,code) {
+		if(err instanceof Error)
+			throw err;
+		if( parseFloat(out) >= .25 ) {
+			tweetPic( '@'+waldo + ", I found you!", faceImage2); 
+		}
+
+		fs.readFile(image2, function(err, data){
+			if(err) throw err;
+			searching = false;
+			tweetPic( '@'+waldo + ", I found you!", data);
 		});
 	});
 }
