@@ -2,9 +2,11 @@ var gc = require('./gamecube_device.js');
 var arDrone = require('ar-drone');
 var fs = require('fs');
 var PaVEParser = require('ar-drone/lib/video/PaVEParser'); 
+var sys = require('sys');
+var exec = require('child_process');
 var cv = require('opencv');
 
-var client  = arDrone.createClient();
+var client  = arDrone.createClient({timeout : 60000});
 
 var twitter = require('twitter');
 var twitterClient = new twitter({
@@ -19,7 +21,7 @@ var pngStream = client.getPngStream();
 var waldo = '';
 var searching = false;
 
-var tweetToggle = false;
+var tweetToggle = true;
 var in_air = false;	
 var emergency = false;
 var camera_attached = false;
@@ -46,31 +48,48 @@ setTimeout(attachCamera, 5000);
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	stream.on('data', function(tweet) {
 		console.log(tweet.text);
-		var tcom = tweetTokens[1].toLowerCase();
 		if(tweetToggle) {
 			tweetTokens = tweet.text.split(" ");
-			if(tweetTokens[0] == '@bitdrone'){
-				if(tcom == '#flipit'
-				|| tcom == '#flipit!'){
-					client.animate('flipRight',1000);
+			var tcom = tweetTokens[1].toLowerCase();
+			queeryMM(tweet.text, function(isHappy) {
+				if(tweetTokens[0] == '@bitdrone' && isHappy){
+					tweet('What a nice tweet from ' tweet.screen_name '!! Buzz. Buzz! I just want to...');
+					if(tcom == '#flipit'
+					|| tcom == '#flipit!'){
+						client.animate('flipRight',1000);
+						console.log('Tweet: Flipping right');
+					}
+					if(tcom == '#spin'
+					|| tcom == '#spinRight'){
+						client.clockwise(1);
+						console.log('Tweet: spinning right');
+					}
+					if(tcom == '#spinLeft'){
+						client.counterClockwise(1);
+						console.log('Tweet: spinning left');
+					}
+					if(tcom == '#forward'
+					|| tcom == '#go'){
+						client.front(1);
+						console.log('Tweet: going forward');
+					}
+					if(tcom == '#stop'){
+						client.stop();
+						console.log('Tweet: stopping');
+					}
+					if(tcom == '#land'){
+						client.land();
+						console.log('Tweet: landing');
+					}
+					if(tcom == '#start'
+					|| tcom == '#takeoff'
+					|| tcom == '#liftoff'){
+						client.takeoff();
+						console.log('Tweet: taking off');
+					}
 				}
-				if(tcom == '#spin'
-				|| tcom == '#spinRight')
-					client.clockwise(1);
-				}
-				if(tcom == '#spinLeft')
-					client.counterClockwise(1);
-				}
-				if(tcom == '#forward'
-				|| tcom == '#go')
-					client.front(1);
-				}
-				if(tcom == '#start'
-				|| tcom == '#takeoff'
-				|| tcom == '#liftoff')
-					client.takeoff();
-				}
-			}
+			});
+			
 
 		}
 	});
@@ -80,12 +99,31 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	});
 });
 
+
+function queeryMM(content, cb) {
+		var child = exec('curl -H "Authorization: Basic ou0TZLDnWg1eCrmwSGshJzCbQPBnF7n3lGrpwqROj9PkKFEmoC" -d \'{"classifier_id":155,"value":' + content + '}\' "https://www.metamind.io/language/classify" ', function (error, stdout, stderr) {
+			var classes = JSON.parse(stdout);
+			if (error !== null) {
+				//
+				console.log('exec error: ' + error);
+
+			}
+			if(classes.predictions[0].class_id == 2) {
+				client.stop();
+				console.log('seems you are a nice person');
+				tweet()
+				cb(true);
+			}
+			else cb(false)
+		});
+}
+
 function tweet(content) {
 	console.log('trying to tweet');
 		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
 			if(error) return;
 			console.log(tweet);
-			console.log(response);
+			//console.log(response);
 		});
 }
 
@@ -134,7 +172,6 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
-		.on('error', console.log)
 		.on('data', function(pngBuffer) {
 		lastPng = pngBuffer;
 		cv.readImage(pngBuffer, function(err, im){
@@ -149,7 +186,7 @@ function attachCamera(){
 					//im.save(imagename);
 					console.log('Saved face image ' + imagename);
 				}else{
-					console.log('No faces!');
+					//console.log('No faces!');
 				}
 			});
 		});	
@@ -311,7 +348,6 @@ gc(function(controller){
 	});
 });
 
-
 /* * * * * * * * * * *
  * BEGIN OPENBR STUFFS
  * * * * * * * * * * */
@@ -343,4 +379,3 @@ function compareFaces( faceImage1, faceImage2 ) {
 		});
 	});
 }
-
