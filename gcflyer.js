@@ -19,6 +19,8 @@ var twitterClient = new twitter({
 var lastPng;
 var pngStream = client.getPngStream();
 
+var waldo = '';
+var searching = false;
 
 var tweetToggle = true;
 var in_air = false;	
@@ -148,7 +150,6 @@ function queeryMM(content, cb) {
 		else cb(false)
 	});
 }
-
 // Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
 function tweetPic(content, data) {
 	twitterClient.post('media/upload', { media: data }, function(error, media, response) {
@@ -354,3 +355,33 @@ gc(function(controller){
 		}
 	});
 });
+
+/* * * * * * * * * * *
+ * BEGIN OPENBR STUFFS
+ * * * * * * * * * * */
+
+function compareFaces( faceImage1, faceImage2 ) {
+	fs.writeFile("./test1", faceImage1, function(err) {
+		if(err) {
+			return console.log(err);
+		}
+
+		console.log("First face saved");
+	});
+	
+	fs.writeFile("./test2", faceImage2, function(err) {
+		if(err) {
+			return console.log(err);
+		}
+
+		console.log("First face saved");
+
+	   exec('br -algorithm FaceRecognition -compare ./test1.jpg ./test2.jpg', function(err,out,code) {
+			if(err instanceof Error)
+				throw err;
+			if( parseFloat(out) >= .25 ) {
+				tweetPic( waldo + ", I found you!", faceImage2); 
+			}
+		});
+	});
+}
