@@ -53,22 +53,6 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 		//console.log(JSON.stringify(tweet));
 		var url_i = tweet.text.indexOf('http://t.co/');
 		var url = undefined;
-		if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
-			url = tweet.extended_entities.media[0].media_url;
-		}
-		console.log(url);
-		if(url){
-			request.get({url: url, encoding: 'binary'}, function (err, response, body) {
-				waldo = tweet.user.name;
-				referencePic = "./img/" + waldo + ".png";
-				fs.writeFile(referencePic, body, 'binary', function(err) {
-					if(err)
-						console.log(err);
-					else
-						console.log("The file was saved!");
-				}); 
-			});
-		}
 		if(tweetToggle) {
 			tweetTokens = tweet.text.split(" ");
 			var tcom = tweetTokens[1].toLowerCase();
@@ -89,9 +73,24 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 						if(searching) {
 							tweet( tweet.user.name + ", sorry, I'm already looking for someone!");
 						} else {
-							waldo = tweet.user.name;
-							searching = true;
-						// referencePic = tweet.?; TODO : grab the photo from the post, 
+							if(tweet.extended_entities && tweet.extended_entities.media && tweet.extended_entities.media.length >= 0){
+								url = tweet.extended_entities.media[0].media_url;
+							}
+								
+							console.log(url);
+							if(url){
+								request.get({url: url, encoding: 'binary'}, function (err, response, body) {
+									waldo = tweet.user.name;
+									searching = true;
+									referencePic = "./img/" + waldo + ".png";
+									fs.writeFile(referencePic, body, 'binary', function(err) {
+										if(err)
+											console.log(err);
+										else
+											console.log("The file was saved!");
+									}); 
+								});
+							}
 						}
 					}
 					if(tcom == '#spinLeft'){
@@ -383,7 +382,7 @@ function compareFaces( image2 ) {
 			if( parseFloat(out) >= .25 ) {
 				fs.readFile(image2, function(err, data){
 					if(err) throw err;
-
+					searching = false;
 					tweetPic( waldo + ", I found you!", data);
 				});
 			}
