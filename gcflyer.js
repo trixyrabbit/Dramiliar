@@ -38,8 +38,6 @@ setTimeout(attachCamera, 5000);
  * * * * * * * * * * * * */
 
 // This allows us to track mentions of bitdrone.  This grabs everything, not just
-// @bitdrone.  TODO: only grab direct mentions
-// TODO: Parse for commands
 // TODO: Have a button activate/deactivate this functionality
 
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
@@ -202,12 +200,12 @@ gc(function(controller){
 			if(data.button == 'l' && data.value == 1){
 				client.animate('flipLeft', 1000);
 				console.log('Flipping left!');
-				tweet('Doing a barrel roll!');
+				tweet('Doing a barrel roll!' + Date.now());
 			}
 			if(data.button == 'r' && data.value == 1){
 				client.animate('flipRight', 1000);
 				console.log('Flipping right!');
-				tweet('Doing a barrel roll!');
+				tweet('Doing a barrel roll!' + Date.now());
 			}
 			if(data.button == 'z' && data.value == 1 && !in_air){
 				client  = arDrone.createClient();
@@ -216,6 +214,10 @@ gc(function(controller){
 			if(data.button == 'b' && data.value == 1){
 				console.log(' tweet tweet x ' + Date.now() + '!' );
 				tweet(' tweet tweet x ' + Date.now() + '!');
+			}
+			if(data.button == 'x' && data.value == 1){
+				console.log(' tweeting a pic');
+				tweetPic(' tweet tweet here is a face! ' + Date.now() + '!', lastPng);
 			}
 		}
 	});
