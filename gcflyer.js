@@ -108,6 +108,24 @@ function tweet(content) {
 	}
 }
 
+// Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
+function tweet(content, data) {
+	twitterClient.post('media/upload', { media: data }, function(error, media, response) {
+		console.log('posting a pic');
+
+		var status = {
+			status: content,
+			media_ids: media.media_id_string
+		}
+
+		twitterClient.post('statuses/update', status, function(error, tweet, response) {
+			if(!error){
+				console.log('tweeting a dank photo!');
+			}
+		});
+	});
+}
+
 gc(function(controller){
 	controller.on('buttonChange', function(data){
 
