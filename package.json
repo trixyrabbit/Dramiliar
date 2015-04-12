@@ -5,6 +5,7 @@
   "dependencies": {
     "ar-drone": "~0.3.3",
     "http": "0.0.0",
-    "fs": "0.0.2"
+    "fs": "0.0.2",
+    "twitter": "~1.2.5"
   }
 }
