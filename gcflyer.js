@@ -57,7 +57,7 @@ twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 function tweet(content) {
 	console.log('trying to tweet');
 		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
-			if(error) throw error;
+			if(error) return;
 			console.log(tweet);
 			console.log(response);
 		});
@@ -117,7 +117,9 @@ function attachCamera(){
 							var x = faces[i]
 								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
 							}	var imagename = './img/face'+Date.now()+'.png';
-							im.save(imagename);
+							im.crop(x.x, x.y, x.width, x.height).save(imagename);
+
+							//im.save(imagename);
 							console.log('Saved face image ' + imagename);
 						}
 					console.log('No faces!');
