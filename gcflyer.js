@@ -26,6 +26,7 @@ var speed_pitch = 0;
 var speed_roll = 0;
 var speed_vert = 0;
 
+var dance_i = 0;
 
 //head camera
 client.config('video:video_channel', 0);
@@ -111,25 +112,25 @@ function attachCamera(){
 	console.log('Connecting png stream ...');
 	//save img streams from camera
 	pngStream
-	.on('error', console.log)
-	.on('data', function(pngBuffer) {
-	lastPng = pngBuffer;
-	cv.readImage(pngBuffer, function(err, im){
-		im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-					if(faces && faces.length > 0){
-						for (var i=0;i<faces.length; i++){
-							var x = faces[i]
-								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
-							}	var imagename = './img/face'+Date.now()+'.png';
-							im.crop(x.x, x.y, x.width, x.height).save(imagename);
-
-							//im.save(imagename);
-							console.log('Saved face image ' + imagename);
-						}
+		.on('error', console.log)
+		.on('data', function(pngBuffer) {
+		lastPng = pngBuffer;
+		cv.readImage(pngBuffer, function(err, im){
+			im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+				if(faces && faces.length > 0){
+					for (var i=0;i<faces.length; i++){
+						var x = faces[i]
+						im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+						var imagename = './img/face'+Date.now()+'.png';
+						im.crop(x.x, x.y, x.width, x.height).save(imagename);
+					}
+					//im.save(imagename);
+					console.log('Saved face image ' + imagename);
+				}else{
 					console.log('No faces!');
+				}
 			});
 		});	
-
 	});
 }
 
@@ -209,10 +210,6 @@ gc(function(controller){
 				console.log('Flipping right!');
 				tweet('Doing a barrel roll!' + Date.now());
 			}
-			if(data.button == 'z' && data.value == 1 && !in_air){
-				client  = arDrone.createClient();
-				console.log('Reconnecting to drone...');
-			}
 			if(data.button == 'b' && data.value == 1){
 				console.log(' tweet tweet x ' + Date.now() + '!' );
 				tweet(' tweet tweet x ' + Date.now() + '!');
@@ -220,6 +217,28 @@ gc(function(controller){
 			if(data.button == 'x' && data.value == 1){
 				console.log(' tweeting a pic');
 				tweetPic(' tweet tweet here is a face! ' + Date.now() + '!', lastPng);
+			}
+			if(data.button == 'y' && data.value == 1){
+				tweetToggle = !tweetToggle;
+				console.log('Tweet toggle set to ' + tweetToggle);
+			}
+			if(data.button == 'dpad_down' && data.value == 1){
+				client.animate('turnaround', 1000);
+				console.log('Turning around');
+			}
+			if(data.button == 'dpad_up' && data.value == 1){
+				var dances = ['phiM30Deg', 'phi30Deg', 'thetaM30Deg', 'theta30Deg', 'theta20degYaw200deg',
+'theta20degYawM200deg', 'turnaround', 'turnaroundGodown', 'yawShake',
+'yawDance', 'phiDance', 'thetaDance', 'vzDance', 'wave', 'phiThetaMixed',
+'doublePhiThetaMixed', 'flipAhead', 'flipBehind', 'flipLeft', 'flipRight'];
+
+				if(dance_i >= dances.length){
+					dance_i = 0;
+				}
+
+				console.log('Animation test: ' + dances[dance_i]);
+
+				client.animate(dances[dance_i++], 5000);
 			}
 		}
 	});
