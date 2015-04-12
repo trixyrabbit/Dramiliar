@@ -150,11 +150,13 @@ gc(function(controller){
 				if(in_air){
 					client.land();
 					console.log('Landing');
+					in_animation = false;
 					//detatchCamera();
 					in_air = false;
 				}else{
 					client.takeoff();
 					console.log('Taking off!');
+					in_animation = false;
 					in_air = true;
 					//setTimeout(attachCamera, 2000);
 				}
@@ -164,48 +166,68 @@ gc(function(controller){
 				speed_roll = getStickSpeed(data.value);
 				if(speed_roll == 0)
 					stopMovement();
-				if(speed_roll > 0)
+				if(speed_roll > 0){
 					client.right(speed_roll);
-				if(speed_roll < 0)
+					in_animation = false;
+				}
+				if(speed_roll < 0){
 					client.left(-speed_roll);
+					in_animation = false;
+				}
 			}
 
 			if(data.button == 'stick_y'){
 				speed_pitch = getStickSpeed(data.value);
 				if(speed_pitch == 0)
 					stopMovement();
-				if(speed_pitch < 0)
+				if(speed_pitch < 0){
 					client.front(-speed_pitch);
-				if(speed_pitch > 0)
+					in_animation = false;
+				}
+				if(speed_pitch > 0){
 					client.back(speed_pitch);
+					in_animation = false;
+				}
 			}
 
 			if(data.button == 'cstick_x'){
 				speed_yaw = getStickSpeed(data.value);
 				if(speed_yaw == 0)
 					stopMovement();
-				if(speed_yaw > 0)
+				if(speed_yaw > 0){
 					client.clockwise(speed_yaw);
-				if(speed_yaw < 0)
+					in_animation = false;
+				}
+				if(speed_yaw < 0){
 					client.counterClockwise(-speed_yaw);
+					in_animation = false;
+				}
 			}
 
 			if(data.button == 'cstick_y'){
 				speed_vert = getStickSpeed(data.value);
 				if(speed_vert == 0)
 					stopMovement();
-				if(speed_vert < 0)
+				if(speed_vert < 0){
 					client.up(-speed_vert);
-				if(speed_vert > 0)
+					in_animation = false;
+				}
+				if(speed_vert > 0){
 					client.down(speed_vert);
+					in_animation = false;
+				}
 			}
 
 			if(data.button == 'l' && data.value == 1){
+				in_animation = false;
+				client.stop();
 				client.animate('flipLeft', 1000);
 				console.log('Flipping left!');
 				tweet('Doing a barrel roll!' + Date.now());
 			}
 			if(data.button == 'r' && data.value == 1){
+				in_animation = false;
+				client.stop();
 				client.animate('flipRight', 1000);
 				console.log('Flipping right!');
 				tweet('Doing a barrel roll!' + Date.now());
@@ -223,8 +245,22 @@ gc(function(controller){
 				console.log('Tweet toggle set to ' + tweetToggle);
 			}
 			if(data.button == 'dpad_down' && data.value == 1){
+				in_animation = false;
 				client.animate('turnaround', 1000);
 				console.log('Turning around');
+			}
+			if(data.button == 'dpad_left' && data.value == 1){
+				//do a spin
+				console.log('Starting big spin');
+				in_animation = true;
+				client.clockwise(1);
+				client.front(0.5);
+				setTimeout(function(){
+					if(in_animation){
+						client.stop();
+						console.log('Stopping spin');
+					}
+				},5000);
 			}
 			if(data.button == 'dpad_up' && data.value == 1){
 				var dances = ['phiM30Deg', 'phi30Deg', 'thetaM30Deg', 'theta30Deg', 'theta20degYaw200deg',
