@@ -44,13 +44,32 @@ setTimeout(attachCamera, 5000);
 twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
 	stream.on('data', function(tweet) {
 		console.log(tweet.text);
+		var tcom = tweetTokens[1].toLowerCase();
 		if(tweetToggle) {
-			tweetTokens = tweet.split(" ");
+			tweetTokens = tweet.text.split(" ");
 			if(tweetTokens[0] == '@bitdrone'){
-				if(tweetTokens[1] == '#flipit!'){
+				if(tcom == '#flipit'
+				|| tcom == '#flipit!'){
 					client.animate('flipRight',1000);
 				}
+				if(tcom == '#spin'
+				|| tcom == '#spinRight')
+					client.clockwise(1);
+				}
+				if(tcom == '#spinLeft')
+					client.counterClockwise(1);
+				}
+				if(tcom == '#forward'
+				|| tcom == '#go')
+					client.front(1);
+				}
+				if(tcom == '#start'
+				|| tcom == '#takeoff'
+				|| tcom == '#liftoff')
+					client.takeoff();
+				}
 			}
+
 		}
 	});
 
