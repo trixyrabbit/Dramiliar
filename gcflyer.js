@@ -12,9 +12,11 @@ var twitterClient = new twitter({
 	access_token_key: '3157351209-0MHzCdahaX7MmLeliimRDGX3QNHlpFIOUsncBOS',
 	access_token_secret: '3MpJAlTVTqw9g5jwqajMbc1g5aibuOnAwauhU7rvEHoI8'
 });
+var lastPng;
+var pngStream = client.getPngStream();
 
-var twitterParams = {screen_name: 'bitdrone'};
 
+var tweetToggle = false;
 var in_air = false;	
 var emergency = false;
 var camera_attached = false;
@@ -25,10 +27,63 @@ var speed_vert = 0;
 
 
 //head camera
-//client.config('video:video_channel', 0);
+client.config('video:video_channel', 0);
 
-setTimeout(attachCamera, 2000);
+setTimeout(attachCamera, 5000);
 
+
+/* * * * * * * * * * * * * 
+ *   BEGIN TWITTER STUFF
+ * * * * * * * * * * * * */
+
+// This allows us to track mentions of bitdrone.  This grabs everything, not just
+// @bitdrone.  TODO: only grab direct mentions
+// TODO: Parse for commands
+// TODO: Have a button activate/deactivate this functionality
+
+twitterClient.stream('statuses/filter', {track: 'bitdrone'}, function(stream){
+	stream.on('data', function(tweet) {
+		console.log(tweet.text);
+		if(tweetToggle) {
+			// Do things
+		}
+	});
+
+	stream.on('error', function(error) {
+		console.log(error);
+	});
+});
+
+function tweet(content) {
+	console.log('trying to tweet');
+		twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
+			if(error) throw error;
+			console.log(tweet);
+			console.log(response);
+		});
+}
+//TODO catch no internet connection errr so we dont drop connection
+// Data should be var data = require('fs').readFileSync('LOCATION_OF_PHOTO');
+function tweetPic(content, data) {
+	twitterClient.post('media/upload', { media: data }, function(error, media, response) {
+		console.log('posting a pic');
+		if(error) return;
+		var status = {
+			status: content,
+			media_ids: media.media_id_string
+		}
+
+		twitterClient.post('statuses/update', status, function(error, tweet, response) {
+			if(!error){
+				console.log('tweeting a dank photo!');
+			}
+		});
+	});
+}
+
+/* * * * * * * * * * *
+ *     END TWITTER
+ * * * * * * * * * * */
 
 function getStickSpeed(value){
 	var speed = 0;
@@ -49,11 +104,14 @@ function stopMovement(){
 function attachCamera(){
 	if(camera_attached)return;
 	camera_attached = true;
-			var s = new cv.ImageStream()
-		 
-			s.on('data', function(matrix){
-			cv.readImage(pngBuffer, function(err, im){
-				im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+	console.log('Connecting png stream ...');
+	//save img streams from camera
+	pngStream
+	.on('error', console.log)
+	.on('data', function(pngBuffer) {
+	lastPng = pngBuffer;
+	cv.readImage(pngBuffer, function(err, im){
+		im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
 					if(faces && faces.length > 0){
 						for (var i=0;i<faces.length; i++){
 							var x = faces[i]
@@ -63,28 +121,10 @@ function attachCamera(){
 							console.log('Saved face image ' + imagename);
 						}
 					console.log('No faces!');
-					});
-				});
 			});
-			 
-			cliet.createPngStream().pipe(s);
-		
+		});	
 
-
-}
-function detatchCamera(){
-	if(video && video.close){
-		video.close();
-		camera_attached = false;
-	}
-}
-function tweet(content) {
-			console.log('trying to tweet');
-			twitterClient.post('statuses/update', { status: content }, function(error, tweet, response) {
-				if(error) throw error;
-				console.log(tweet);
-				console.log(response);
-			});
+	});
 }
 
 
@@ -96,14 +136,14 @@ gc(function(controller){
 			client.land();
 			emergency = true;
 			console.log('EMERGENCY LANDING');
-			detatchCamera();
+			//detatchCamera();
 		}
 		if(!emergency){
 			if(data.button == 'start' && data.value == 1){
 				if(in_air){
 					client.land();
 					console.log('Landing');
-					detatchCamera();
+					//detatchCamera();
 					in_air = false;
 				}else{
 					client.takeoff();
@@ -205,3 +245,25 @@ gc(function(controller){
 	    console.log('It\'s saved!');
 	  }); */
 	//see check the image for faces, save it
+
+/*
+			var s = new cv.ImageStream()
+		 
+			s.on('data', function(matrix){
+			cv.readImage(pngBuffer, function(err, im){
+				im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
+					if(faces && faces.length > 0){
+						for (var i=0;i<faces.length; i++){
+							var x = faces[i]
+								im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+							}	var imagename = './img/face'+Date.now()+'.png';
+							im.save(imagename);
+							console.log('Saved face image ' + imagename);
+						}
+					console.log('No faces!');
+					});
+				});
+			});
+			 
+			client.getPngStream().pipe(s);
+*/
